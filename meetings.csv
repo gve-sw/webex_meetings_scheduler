@@ -1,0 +1,5 @@
+MeetingName,Host,StartTime,Duration,Attendees,Agenda
+Meeting 1,jbanegas@cisco.com,28/03/2020 12:00,20,jbanegas1997@hotmail.com; jjb87@miami.edu,Testing for meeting 1
+Meeting A,jbanegas@cisco.com,29/03/2020 12:00,12,jbanegas1997@hotmail.com; jjb87@miami.edu,Testing for meeting A
+Meeting 2,jbanegas@cisco.com,29/03/2020 2:05,15,jbanegas1997@hotmail.com; jjb87@miami.edu,Testing for meeting 2
+Meeting B,jbanegas@cisco.com,29/03/2020 2:05,15,jbanegas1997@hotmail.com; jjb87@miami.edu,Testing for meeting B
