@@ -48,7 +48,7 @@ if __name__ == "__main__":
     input('Press Enter to continue...')
 
     # Header for the csv file that will generate the report
-    csv_columns = ['MeetingName', 'Host', 'JoinUrl','InviteUrl']
+    csv_columns = ['MeetingName', 'Host', 'JoinUrl','InviteUrl','sipURL']
     list_of_meetings_data = []
 
     # Open and read csv file
@@ -91,6 +91,13 @@ if __name__ == "__main__":
                 start_time = ''.join(start_time)
                 start_time = start_time + ":00"
 
+                # create 2 versions of the host to use to create the meeting because for some sites it errors out
+                # when using the full email address and for others, when you just use the userid
+                #first version is the full email address with domain
+                hostfull=host
+                #second version removes the domain and keeps just the username
+                hostshort=host = host.split("@")[0]
+
                 try:
                     response = functions.CreateMeeting(functions.sessionSecurityContext,
                         meetingPassword = 'C!sco123',
@@ -98,26 +105,52 @@ if __name__ == "__main__":
                         agenda = agenda,
                         startDate = start_time,
                         duration = duration,
-                        host = host,
+                        host = hostfull,
                         attendees = attendees)
 
                     meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
                     print('Meeting Key:', meeting_key)
 
                 except functions.SendRequestError as err:
-                    print(err)
-                    raise SystemExit
+                    if err.reason!='The host WebExID does not exist':
+                        #this is some other error that we are not anticipating, so just print and exit
+                        print(err)
+                        raise SystemExit
+                    else:
+                        try:
+                            # since the error was specific to not liking the WebExID without host and we know with some sites
+                            # that it is the case, now let's try it without removing the domain from host email
+                            response = functions.CreateMeeting(functions.sessionSecurityContext,
+                                                               meetingPassword='C!sco123',
+                                                               meetingName=meeting_name,
+                                                               agenda=agenda,
+                                                               startDate=start_time,
+                                                               duration=duration,
+                                                               host=hostshort,
+                                                               attendees=attendees)
+
+                            meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
+                            print('Meeting Key:', meeting_key)
+                        except functions.SendRequestError as err:
+                            # this is still some other error that we are not anticipating, so just print and exit
+                            print(err)
+                            raise SystemExit
 
                 try:
                     response = functions.GetMeetingUrl(functions.sessionSecurityContext,meeting_key)
 
                     meeting['JoinUrl'] = response.find('{*}body/{*}bodyContent/{*}joinMeetingURL').text
                     meeting['InviteUrl'] = response.find('{*}body/{*}bodyContent/{*}inviteMeetingURL').text
-                    list_of_meetings_data.append(meeting)
-
-
                     print('Meeting url generated')
 
+                    
+
+                    responseSIP = functions.GetMeeting(functions.sessionSecurityContext,meeting_key)
+                    meeting['sipURL']= responseSIP.find('{*}body/{*}bodyContent/{*}sipURL').text
+                    #result['serv:message']['serv:body'][0]['serv:bodyContent'][0]['meet:sipURL'][0]
+                    print('Meeting SIP url generated')
+
+                    list_of_meetings_data.append(meeting)
                     try:
                         with open('data.csv', 'w') as csvfile:
                             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)

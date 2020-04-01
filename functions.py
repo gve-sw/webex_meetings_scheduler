@@ -118,11 +118,7 @@ def AuthenticateUser(siteName, webExId, password, accessToken):
             'sessionTicket': response.find( '{*}body/{*}bodyContent/{*}sessionTicket' ).text
             }
 
-def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees):
-
-    # remove the domain from host email
-    host = host.split("@")[0]
-
+def CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees):
     request = f'''<?xml version="1.0" encoding="UTF-8"?>
         <serv:message xmlns:serv="http://www.webex.com/schemas/2002/06/service"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -178,16 +174,14 @@ def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, 
             </body>
         </serv:message>'''
 
-
     # here we are reading the request xml string and appending the attendees by emails
-    
+
     tree = ET.ElementTree(ET.fromstring(request))
 
     for address in attendees:
         root = tree.getroot()
         body = root[1][0][2][0]
 
-       
         tree = ET.ElementTree(ET.fromstring(request))
         root = tree.getroot()
         body = root[1][0][2][0]
@@ -197,12 +191,19 @@ def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, 
         email = ET.SubElement(person, "email")
 
         name.text = address
-        email.text= address
-        request = ET.tostring(root)
+        email.text = address
+        response = ET.tostring(root)
+
+    return response
+
+def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees):
+
+    request =  CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees)
 
     response = sendRequest(request)
 
     return response
+
 
 def GetMeetingUrl(sessionSecurityContext,meetingKey):
 
@@ -212,7 +213,7 @@ def GetMeetingUrl(sessionSecurityContext,meetingKey):
                 <securityContext>
                     <siteName>{sessionSecurityContext["siteName"]}</siteName>
                     <webExID>{sessionSecurityContext["webExId"]}</webExID>
-                    <password>{credentials.password}</password>
+                    <sessionTicket>{sessionSecurityContext["sessionTicket"]}</sessionTicket>  
                 </securityContext>
             </header>
             <body>
@@ -222,6 +223,30 @@ def GetMeetingUrl(sessionSecurityContext,meetingKey):
                 </bodyContent>
             </body>
         </serv:message>'''
+
+    response = sendRequest(request)
+
+    return response
+
+def GetMeeting(sessionSecurityContext,meetingKey):
+
+    request = f'''<?xml version="1.0" encoding="ISO-8859-1"?>
+                <serv:message
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xmlns:serv="http://www.webex.com/schemas/2002/06/service">
+                    <header>
+                        <securityContext>
+                            <siteName>{sessionSecurityContext["siteName"]}</siteName>
+                            <webExID>{sessionSecurityContext["webExId"]}</webExID>
+                            <sessionTicket>{sessionSecurityContext["sessionTicket"]}</sessionTicket>
+                        </securityContext>
+                    </header>
+                    <body>
+                        <bodyContent xsi:type="java:com.webex.service.binding.meeting.GetMeeting">
+                            <meetingKey>{meetingKey}</meetingKey>
+                        </bodyContent>
+                    </body>
+                </serv:message>'''
 
     response = sendRequest(request)
 

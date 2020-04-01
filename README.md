@@ -54,7 +54,7 @@ The script will schedule the meeting and invite the host and antendees.
 
 ![alt text](images/invitees.png)
 
-The script will generate a csv file contatining each meeting name,host, invitation url, and join url (url to the actual meetig)
+The script will generate a csv file contatining each meeting name,host, invitation url, join url (url to the actual meeting) and SIP URL (to join via a SIP device directly)
 
 ![alt text](images/report_example.png)
 
