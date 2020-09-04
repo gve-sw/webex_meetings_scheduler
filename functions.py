@@ -25,7 +25,8 @@ import xml.etree.ElementTree as ET
 DEBUG = False
 
 # Once the user is authenticated, the sessionTicket for all API requests will be stored here
-sessionSecurityContext = { }
+sessionSecurityContext = {}
+
 
 # Custom exception for errors when sending requests
 class SendRequestError(Exception):
@@ -36,46 +37,45 @@ class SendRequestError(Exception):
 
     pass
 
+
 # Generic function for sending XML API requests
 #   envelope : the full XML content of the request
 def sendRequest(envelope):
-
     if DEBUG:
-        print( envelope )
+        print(envelope)
 
     # Use the requests library to POST the XML envelope to the Webex API endpoint
-    headers = { 'Content-Type': 'application/xml'}
-    response = requests.post( 'https://api.webex.com/WBXService/XMLService', envelope )
+    headers = {'Content-Type': 'application/xml'}
+    response = requests.post('https://api.webex.com/WBXService/XMLService', envelope)
 
     # Check for HTTP errors
-    try: 
+    try:
         response.raise_for_status()
-    except requests.exceptions.HTTPError as err: 
-        raise SendRequestError( 'HTTP ' + str(response.status_code), response.content.decode("utf-8") )
+    except requests.exceptions.HTTPError as err:
+        raise SendRequestError('HTTP ' + str(response.status_code), response.content.decode("utf-8"))
 
     # Use the lxml ElementTree object to parse the response XML
-    message = etree.fromstring( response.content )
+    message = etree.fromstring(response.content)
 
     if DEBUG:
-        print( etree.tostring( message, pretty_print = True, encoding = 'unicode' ) )   
+        print(etree.tostring(message, pretty_print=True, encoding='unicode'))
 
-    # Use the find() method with an XPath to get the 'result' element's text
+        # Use the find() method with an XPath to get the 'result' element's text
     # Note: {*} is pre-pended to each element name - ignores namespaces
     # If not SUCCESS...
-    if message.find( '{*}header/{*}response/{*}result').text != 'SUCCESS':
+    if message.find('{*}header/{*}response/{*}result').text != 'SUCCESS':
+        result = message.find('{*}header/{*}response/{*}result').text
+        reason = message.find('{*}header/{*}response/{*}reason').text
 
-        result = message.find( '{*}header/{*}response/{*}result').text
-        reason = message.find( '{*}header/{*}response/{*}reason').text
-
-        #...raise an exception containing the result and reason element content
-        raise SendRequestError( result, reason )
+        # ...raise an exception containing the result and reason element content
+        raise SendRequestError(result, reason)
 
     return message
 
-def AuthenticateUser(siteName, webExId, password, accessToken):
 
+def AuthenticateUser(siteName, webExId, password, accessToken):
     # If an access token is provided in .env, we'll use this form
-    if ( accessToken ):
+    if (accessToken):
         request = f'''<?xml version="1.0" encoding="UTF-8"?>
             <serv:message xmlns:serv="http://www.webex.com/schemas/2002/06/service"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -113,12 +113,14 @@ def AuthenticateUser(siteName, webExId, password, accessToken):
 
     # Return an object containing the security context info with sessionTicket
     return {
-            'siteName': siteName,
-            'webExId': webExId,
-            'sessionTicket': response.find( '{*}body/{*}bodyContent/{*}sessionTicket' ).text
-            }
+        'siteName': siteName,
+        'webExId': webExId,
+        'sessionTicket': response.find('{*}body/{*}bodyContent/{*}sessionTicket').text
+    }
 
-def CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees):
+
+def CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,
+                              attendees):
     request = f'''<?xml version="1.0" encoding="UTF-8"?>
         <serv:message xmlns:serv="http://www.webex.com/schemas/2002/06/service"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -192,21 +194,21 @@ def CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingNa
 
         name.text = address
         email.text = address
-        response = ET.tostring(root)
+        request = ET.tostring(root)
 
-    return response
+    return request
 
-def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees):
 
-    request =  CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,attendees)
+def CreateMeeting(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host, attendees):
+    request = CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate,
+                                        duration, host, attendees)
 
     response = sendRequest(request)
 
     return response
 
 
-def GetMeetingUrl(sessionSecurityContext,meetingKey):
-
+def GetMeetingUrl(sessionSecurityContext, meetingKey):
     request = f'''<?xml version="1.0" encoding="UTF-8"?>
         <serv:message xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <header>
@@ -228,8 +230,8 @@ def GetMeetingUrl(sessionSecurityContext,meetingKey):
 
     return response
 
-def GetMeeting(sessionSecurityContext,meetingKey):
 
+def GetMeeting(sessionSecurityContext, meetingKey):
     request = f'''<?xml version="1.0" encoding="ISO-8859-1"?>
                 <serv:message
                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -250,4 +252,34 @@ def GetMeeting(sessionSecurityContext,meetingKey):
 
     response = sendRequest(request)
 
+    return response
+
+
+def AlternateHost(sessionSecurityContext, meetingKey, alternateHost):
+    request = f''' <?xml version="1.0" encoding="UTF-8"?>
+                    <serv:message xmlns:serv="http://www.webex.com/schemas/2002/06/service"
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                        <header>
+                            <securityContext>
+                                <siteName>{sessionSecurityContext["siteName"]}</siteName>
+                                <webExID>{sessionSecurityContext["webExId"]}</webExID>
+                                <sessionTicket>{sessionSecurityContext["sessionTicket"]}</sessionTicket>  
+                            </securityContext>
+                        </header>
+                        <body>
+                            <bodyContent xsi:type="java:com.webex.service.binding.attendee.CreateMeetingAttendee">
+                                <person>
+                                    <name>{alternateHost}</name>
+                                    <address>
+                                        <addressType>PERSONAL</addressType>
+                                    </address>
+                                    <email>{alternateHost}</email>
+                                    <type>VISITOR</type>
+                                </person>
+                                <role>HOST</role>
+                                <sessionKey>{meetingKey}</sessionKey>
+                            </bodyContent>
+                        </body>
+                    </serv:message>'''
+    response = sendRequest(request)
     return response

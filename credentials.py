@@ -28,7 +28,7 @@ username = ""
 password = ""
 
 # Example: username@cisco.webex.com sitename = "cisco"
-sitename= "apidemoeu"
+sitename= ""
 
 access_token = None
 

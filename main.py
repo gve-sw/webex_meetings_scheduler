@@ -48,7 +48,7 @@ if __name__ == "__main__":
     input('Press Enter to continue...')
 
     # Header for the csv file that will generate the report
-    csv_columns = ['MeetingName', 'Host', 'JoinUrl','InviteUrl','sipURL']
+    csv_columns = ['MeetingKey', 'MeetingName', 'Host', 'JoinUrl','InviteUrl','sipURL', 'AlternateHost']
     list_of_meetings_data = []
 
     # Open and read csv file
@@ -75,10 +75,15 @@ if __name__ == "__main__":
                 start_time = row[2]
                 duration = row[3]
                 attendees = row[4]
-                agenda = row[5]
+                agenda = row[6]
+
+                alternate_host = row[5]
+                meeting['AlternateHost'] = alternate_host
+                #print(alternate_host)
                 
                 attendees = attendees.replace(' ','')
                 attendees = attendees.split(';')
+                #print(attendees)
 
 
                 # Here we are swapping the date format from DD/MM/YYYY to MM/DD/YYYY 
@@ -111,6 +116,11 @@ if __name__ == "__main__":
                     meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
                     print('Meeting Key:', meeting_key)
 
+                    SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
+                        meetingKey = meeting_key,
+                        alternateHost = alternate_host)
+
+
                 except functions.SendRequestError as err:
                     if err.reason!='The host WebExID does not exist':
                         #this is some other error that we are not anticipating, so just print and exit
@@ -131,6 +141,11 @@ if __name__ == "__main__":
 
                             meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
                             print('Meeting Key:', meeting_key)
+
+                            SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
+                                                                       meetingKey=meeting_key,
+                                                                       alternateHost=alternate_host)
+
                         except functions.SendRequestError as err:
                             # this is still some other error that we are not anticipating, so just print and exit
                             print(err)
@@ -156,6 +171,7 @@ if __name__ == "__main__":
                             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
                             writer.writeheader()
                             for data in list_of_meetings_data:
+                                meeting['MeetingKey'] = meeting_key
                                 writer.writerow(data)
                     except IOError:
                         print("I/O error")
