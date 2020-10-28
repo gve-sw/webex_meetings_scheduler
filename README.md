@@ -1,4 +1,4 @@
-# Webex Meetings Scheduler
+ # Webex Meetings Scheduler
 
 This Python 3 sample code shows how to schedule multiple Webex Meetings sessions as specified in a comma separated values (.csv) source file using the Webex Meetings XML API.  
 It uses the credentials of a site admin to be able to 
@@ -12,7 +12,7 @@ directly from the Webex Cloud.
 * Jorge Banegas (jbanegas@cisco.com)
 * Gerardo Chaves (gchaves@cisco.com)
 * Maxime Acquatella (macquate@cisco.com)
-*  August 2020
+
 ***
 
 ### Prerequisites
@@ -47,7 +47,7 @@ API functionality before adding it to your code.
 if your Webex site has **Single Sign-on (SSO)** enabled (https://help.webex.com/en-us/lfu88u/Single-Sign-On-Integration-in-Cisco-Webex-Control-Hub#CMGT_RF_S9BDF982_00) , 
 follow the instructions in the [oauth2.py](oauth2.py) file to generate an access token to use instead of username/password with this sample code.
 7. Create or edit the [meetings.csv](meetings.csv) input file in the local directory
-8. Follow the format in that .csv file to specify the meeting Host, time, date, Alternate Host and attendees to be invited  
+8. Follow the format in that .csv file to specify the meeting Host, time, date (MM/DD/YYYY), Alternate Host and attendees to be invited  
 
 This is what the sample [meetings.csv](meetings.csv) file provided in the repository looks like: 
 
@@ -67,7 +67,7 @@ After you press enter, the script will start to read the data from the [meetings
 
 ![alt text](images/success.png)
 
-The script will use the Webex Meetings XML API to schedule the meetings and invite the hosts, alternate hosts and attendees.
+The script will use the Webex Meetings XML API to schedule the meetings and invite the hosts, alternate host and attendees.
 
 ![alt text](images/email2.png)
 
@@ -87,6 +87,11 @@ for each successfully scheduled meeting, the following fields:
 
 Also, if properly configured with default settings on the Webex Site, email invites will be sent automatically to hosts and attendees 
 directly from the Webex Cloud. 
+
+#### NOTE   
+If you want to list the meetings scheduled using the Webex Teams REST API, be sure to specify "scheduledMeeting" as the meeting type:
+``` https://webexapis.com/v1/meetings?meetingType=scheduledMeeting ```
+The default meetingType when you use that endpoint is "meetingSeries" which only lists those meetings you scheduled manually or using the REST API, not those that where created using the XML API as shown in this sample code. 
 
 ### API Reference/Documentation:
 * [Webex Meetings Python Functions](https://github.com/CiscoDevNet/webex-meetings-python-samples)
