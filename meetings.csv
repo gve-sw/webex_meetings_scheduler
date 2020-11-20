@@ -1,3 +1,4 @@
-MeetingName,Host,StartTime,Duration,Attendees,AlternateHost,Agenda
-Meeting 1,host@email.com,04/09/2020 12:00,20,user1@email.com;user2@email.com;user3@email.com,alternate_host@email.com,Testing for meeting 1
-Meeting A,host@email.com,04/09/2020 12:00,12,user1@email.com;user2@email.com;user3@email.com,alternate_host@email.com,Testing for meeting A
+MeetingName,Host,StartTime,Duration,MtgPassword,Attendees,AlternateHosts,Agenda
+Meeting 1,host1@email.com,10/25/2020 12:00,30,D!ffPwd3,user1@email.com;user2@email.com;user3@email.com,alternate_host@email.com,alternate_host2@email.com,Testing for meeting 1
+Meeting 2,host2@email.com,10/27/2020 15:00,60,D!ffPwd3,user1@email.com;user2@email.com,,Testing for meeting 2
+Meeting 3,host3@email.com,10/28/2020 17:00,60,D!ffPwd2,user1@email.com;user2@email.com;user4@email.com,host1@email.com,Testing for meeting 3

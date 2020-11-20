@@ -48,10 +48,35 @@ if __name__ == "__main__":
     input('Press Enter to continue...')
 
     # Header for the csv file that will generate the report
-    csv_columns = ['MeetingKey', 'MeetingName', 'Host', 'JoinUrl','InviteUrl','sipURL', 'AlternateHost']
+    csv_columns = ['MeetingKey', 'MeetingName', 'Host', 'JoinUrl','InviteUrl','sipURL', 'AlternateHosts']
     list_of_meetings_data = []
 
-    # Open and read csv file
+    # First  Open and read csv file to set delegate permissions by creating a list of all hosts
+    # to schedule meetings for in the file and then iterating through them to add the admin account in
+    # the delegate permissions
+    list_of_hosts = []
+    with open('meetings.csv','r') as csv_file:
+        csv_reader = csv.reader(csv_file)
+        header = None
+
+        for row_number, row in enumerate(csv_reader):
+            if row_number is 0:
+                header = row
+                continue
+            else:
+                host = row[1]
+                if host not in list_of_hosts:
+                    list_of_hosts.append(host)
+
+    for the_host in list_of_hosts:
+        try:
+            result=functions.SetDelegatePermissions(functions.sessionSecurityContext, the_host)
+        except functions.SendRequestError as err:
+            print(err)
+            raise SystemExit
+
+
+    # Now Open and read csv file to schedule meetings
     with open('meetings.csv','r') as csv_file:
         csv_reader = csv.reader(csv_file)
         header = None
@@ -74,23 +99,32 @@ if __name__ == "__main__":
 
                 start_time = row[2]
                 duration = row[3]
-                attendees = row[4]
-                agenda = row[6]
+                mtg_password = row[4]
+                attendees = row[5]
+                agenda = row[7]
 
-                alternate_host = row[5]
-                meeting['AlternateHost'] = alternate_host
-                #print(alternate_host)
-                
+                alternate_hosts = row[6]
+                meeting['AlternateHosts'] = alternate_hosts
+                alternate_hosts = alternate_hosts.replace(' ','')
+                if alternate_hosts=='':
+                    alternate_hosts=[]
+                else:
+                    alternate_hosts = alternate_hosts.split(';')
+                print(alternate_hosts)
+
                 attendees = attendees.replace(' ','')
-                attendees = attendees.split(';')
+                if attendees=='':
+                    attendees=[]
+                else:
+                    attendees = attendees.split(';')
                 #print(attendees)
 
 
                 # Here we are swapping the date format from DD/MM/YYYY to MM/DD/YYYY 
                 # Comment the two lines below if CSV file already has correct format
 
-                start_time = list(start_time)
-                start_time[0:2] ,start_time[3:5] = start_time[3:5],start_time[0:2]
+                #start_time = list(start_time)
+                #start_time[0:2] ,start_time[3:5] = start_time[3:5],start_time[0:2]
 
 
                 start_time = ''.join(start_time)
@@ -103,9 +137,12 @@ if __name__ == "__main__":
                 #second version removes the domain and keeps just the username
                 hostshort=host = host.split("@")[0]
 
+
+
+
                 try:
                     response = functions.CreateMeeting(functions.sessionSecurityContext,
-                        meetingPassword = 'C!sco123',
+                        meetingPassword = mtg_password,
                         meetingName = meeting_name,
                         agenda = agenda,
                         startDate = start_time,
@@ -116,9 +153,12 @@ if __name__ == "__main__":
                     meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
                     print('Meeting Key:', meeting_key)
 
-                    SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
-                        meetingKey = meeting_key,
-                        alternateHost = alternate_host)
+
+                    for alternate_host in alternate_hosts:
+                        print('Setting alternate hosts...')
+                        SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
+                            meetingKey = meeting_key,
+                            alternateHost = alternate_host)
 
 
                 except functions.SendRequestError as err:
@@ -142,9 +182,11 @@ if __name__ == "__main__":
                             meeting_key = response.find('{*}body/{*}bodyContent/{*}meetingkey').text
                             print('Meeting Key:', meeting_key)
 
-                            SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
-                                                                       meetingKey=meeting_key,
-                                                                       alternateHost=alternate_host)
+                            for alternate_host in alternate_hosts:
+                                print('Setting alternate hosts...')
+                                SetAlternateHost = functions.AlternateHost(functions.sessionSecurityContext,
+                                                                           meetingKey=meeting_key,
+                                                                           alternateHost=alternate_host)
 
                         except functions.SendRequestError as err:
                             # this is still some other error that we are not anticipating, so just print and exit

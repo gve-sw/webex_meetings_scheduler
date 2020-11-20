@@ -118,6 +118,26 @@ def AuthenticateUser(siteName, webExId, password, accessToken):
         'sessionTicket': response.find('{*}body/{*}bodyContent/{*}sessionTicket').text
     }
 
+def SetDelegatePermissions(sessionSecurityContext, host):
+    request = f'''<?xml version="1.0" encoding="UTF-8"?>
+                <serv:message xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xmlns:serv="http://www.webex.com/schemas/2002/06/service">
+                  <header>
+                    <securityContext>
+                    <siteName>{sessionSecurityContext["siteName"]}</siteName>
+                    <webExID>{sessionSecurityContext["webExId"]}</webExID>
+                    <sessionTicket>{sessionSecurityContext["sessionTicket"]}</sessionTicket>  
+                    </securityContext>
+                  </header>
+                  <body>
+                    <bodyContent xsi:type="java:com.webex.service.binding.user.SetUser">
+                      <webExId>{host}</webExId>
+                      <schedulingPermission>{sessionSecurityContext["webExId"]}</schedulingPermission>
+                    </bodyContent>
+                  </body>
+                </serv:message>'''
+    response = sendRequest(request)
+    return response
 
 def CreateMeetingBuildRequest(sessionSecurityContext, meetingPassword, meetingName, agenda, startDate, duration, host,
                               attendees):
